@@ -1,4 +1,8 @@
-{
+# webDir ko "." karo
+# Ctrl+O, Enter, Ctrl+X
+git add capacitor.config.json
+git commit -m "fix webDir"
+git push{
   "appId": "com.sdcode.ai",
   "appName": "SD CODE AI",
   "webDir": "."
