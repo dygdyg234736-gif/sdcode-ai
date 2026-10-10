@@ -1,33 +1,12 @@
-name: Build APK
-on:
-  push:
-  workflow_dispatch:
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Install deps
-        run: npm install --legacy-peer-deps
-      - name: Add android
-        run: npx cap add android
-      - name: Sync
-        run: npx cap sync android
-      - name: Build
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: SDCODE-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+cd ~/SDAI && \
+rm -f .github/workflows/*.yml && \
+mkdir -p .github/workflows && \
+cat > .gitignore << 'GITEOF'
+node_modules/
+package-lock.json
+android/
+.gradle/
+*.log
+.DS_Store
+GITEOF
+echo "✅ Cleanup done. Ab nano se workflow banao:"
