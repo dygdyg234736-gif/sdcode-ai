@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+<meta name="theme-color" content="#007acc" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>SD CODE AI</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23007acc'/%3E%3Ctext x='50' y='68' font-size='52' font-family='monospace' fill='white' text-anchor='middle'%3E%3C/%3E%3C/text%3E%3C/svg%3E" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor/editor.main.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="analysis-progress" id="analysis-progress">
+    <i class="fa-solid fa-spinner fa-spin"></i> <span id="analysis-text">Analyzing...</span>
+</div>
+
+<div id="app">
+    <div id="titlebar">
+        <span class="logo"><i class="fa-solid fa-code"></i> SD CODE AI</span>
+        <span id="plesk-status" class="plesk-status disconnected">Plesk: Off</span>
+        <span class="spacer"></span>
+        <button class="btn-icon" id="btn-command" title="Command Palette (Ctrl+K)"><i class="fa-solid fa-terminal"></i></button>
+        <button class="btn-icon" id="btn-analyze" title="Analyze Project"><i class="fa-solid fa-microscope"></i></button>
+        <button class="btn-icon" id="btn-folder-upload" title="Upload Folder"><i class="fa-solid fa-folder-open"></i></button>
+        <button class="btn-icon" id="btn-settings" title="Settings"><i class="fa-solid fa-gear"></i></button>
+        <button class="btn-icon" id="btn-chat-toggle" title="AI Chat"><i class="fa-solid fa-robot"></i></button>
+        <button class="btn-icon" id="btn-sidebar-toggle" title="Menu"><i class="fa-solid fa-bars"></i></button>
+    </div>
+
+    <div id="main">
+        <div id="activitybar">
+            <button class="act-btn active" data-panel="explorer" title="Files"><i class="fa-solid fa-files"></i></button>
+            <button class="act-btn" data-panel="terminal" title="Terminal"><i class="fa-solid fa-terminal"></i></button>
+            <button class="act-btn" data-panel="preview" title="Preview"><i class="fa-solid fa-play"></i></button>
+            <button class="act-btn" data-panel="search" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <span>Explorer</span>
+                <div>
+                    <button class="add-btn" id="btn-new-file" title="New File"><i class="fa-solid fa-plus"></i></button>
+                    <button class="add-btn" id="btn-export" title="Export Project"><i class="fa-solid fa-download"></i></button>
+                    <button class="add-btn" id="btn-import" title="Import Project"><i class="fa-solid fa-upload"></i></button>
+                </div>
+            </div>
+            <div class="project-info" id="project-info">
+                <div>No project loaded</div>
+                <div style="margin-top:4px;font-size:9px;">📁 Folder drop karo ya icon tap karo</div>
+            </div>
+            <div class="drop-zone" id="drop-zone">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size:20px;margin-bottom:6px;display:block;"></i>
+                Drag folder here<br><small>ya tap karo</small>
+                <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none;">
+                <input type="file" id="import-input" accept=".json" style="display:none;">
+            </div>
+            <div id="file-list"></div>
+        </div>
+
+        <div id="editor-area">
+            <div id="tabs"></div>
+            <div id="editor-container"></div>
+            <div id="panel">
+                <div id="panel-tabs">
+                    <button class="panel-tab active" data-tab="terminal">Terminal</button>
+                    <button class="panel-tab" data-tab="output">Output</button>
+                    <button class="panel-tab" data-tab="preview">Preview</button>
+                    <span style="flex:1"></span>
+                    <button class="panel-tab" id="panel-collapse" title="Toggle"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+                <div id="panel-content">
+                    <div id="terminal-container"></div>
+                    <div id="output-container"></div>
+                    <div id="preview-container"><iframe id="preview-iframe" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-panel" class="hidden">
+            <div class="chat-header">
+                <span><i class="fa-solid fa-robot"></i> SD CODE AI <span id="active-model-badge" class="model-badge">Auto</span></span>
+                <button class="btn-icon" id="btn-chat-close" title="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-btn" data-action="analyze">🔬 Analyze</button>
+                <button class="quick-btn" data-action="explain">📖 Explain</button>
+                <button class="quick-btn" data-action="improve">✨ Improve</button>
+                <button class="quick-btn" data-action="fix">🐛 Fix</button>
+                <button class="quick-btn" data-action="doc">📝 Docs</button>
+                <button class="quick-btn" data-action="test">🧪 Tests</button>
+            </div>
+            <div id="chat-messages">
+                <div class="msg system">Namaste! Main SD CODE AI hoon — <b>codebase-aware</b>.<br><br>Project folder upload karo, main poora scan karke samajh lunga. Phir kisi bhi file ko edit karne ke liye bolo.</div>
+            </div>
+            <div id="chat-input-area">
+                <textarea id="chat-input" rows="1" placeholder="e.g. 'currency.php likh do multi-currency support ke saath'"></textarea>
+                <button id="send-btn" disabled><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusbar">
+        <span class="item"><i class="fa-solid fa-code-branch"></i> main</span>
+        <span class="item" id="status-file">No file</span>
+        <span class="spacer"></span>
+        <span class="item optional" id="status-context"><i class="fa-solid fa-brain"></i> 0</span>
+        <span class="item optional" id="status-autosave"><i class="fa-solid fa-floppy-disk"></i> Saved</span>
+        <span class="item" id="status-ai"><i class="fa-solid fa-circle" style="color:#4ec9b0;font-size:8px;"></i> AI</span>
+        <span class="item optional" id="status-model">auto</span>
+        <span class="item optional" id="status-lang">Text</span>
+        <span class="item" id="status-pos">Ln 1</span>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+        <h3><i class="fa-solid fa-gear"></i> Settings</h3>
+        <label>AI Provider</label>
+        <select id="sel-provider">
+            <option value="nvidia">NVIDIA NIM (Recommended)</option>
+            <option value="gemini">Google Gemini (Free)</option>
+        </select>
+        <label>NVIDIA API Key</label>
+        <input type="password" id="inp-nvidia-key" />
+        <label>NVIDIA Model</label>
+        <select id="sel-nvidia-model"></select>
+        <label>Gemini API Key</label>
+        <input type="password" id="inp-gemini-key" placeholder="AIza..." />
+        <label>Gemini Model</label>
+        <select id="sel-gemini-model"></select>
+        <label>Plesk API URL</label>
+        <input type="text" id="inp-plesk-url" placeholder="https://server:8443/api/v2" />
+        <label>Plesk API Token</label>
+        <input type="password" id="inp-plesk-token" />
+        <label>Editor Font Size</label>
+        <input type="range" id="inp-font-size" min="10" max="22" value="13" />
+        <span id="font-size-label" style="font-size:11px;color:#858585;">13px</span>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+            <input type="checkbox" id="inp-wordwrap" style="width:auto;" /> Word Wrap
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" id="inp-minimap" style="width:auto;" /> Minimap
+        </label>
+        <div class="btn-row">
+            <button class="btn btn-secondary" id="btn-settings-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-settings-save">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- New File Modal -->
+<div class="modal-overlay" id="newfile-modal">
+    <div class="modal">
+        <h3><i class="fa-solid fa-file-circle-plus"></i> New File</h3>
+        <label>File Name (path supported: folder/file.php)</label>
+        <input type="text" id="inp-new-filename" placeholder="example.php" />
+        <div class="btn-row">
+            <button class="btn btn-secondary" id="btn-newfile-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-newfile-create">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Modal -->
+<div class="modal-overlay" id="analysis-modal">
+    <div class="modal" style="max-width:620px;">
+        <h3><i class="fa-solid fa-microscope"></i> Project Analysis</h3>
+        <div id="analysis-content" style="font-size:11px;font-family:var(--font-mono);line-height:1.6;max-height:60vh;overflow-y:auto;background:#1e1e1e;padding:10px;border-radius:4px;white-space:pre-wrap;"></div>
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btn-analysis-close">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Command Palette -->
+<div class="modal-overlay" id="command-modal">
+    <div class="modal" style="max-width:500px;">
+        <input type="text" id="command-input" placeholder="Type a command..." style="font-size:14px;padding:10px;" />
+        <div id="command-list" style="margin-top:10px;max-height:300px;overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- Scripts: order matters -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/terminal.js"></script>
+<script src="js/files.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
